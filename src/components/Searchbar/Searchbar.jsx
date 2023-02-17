@@ -1,50 +1,44 @@
-import React, { Component } from 'react';
+import { useState } from 'react';
 import PropTypes from 'prop-types';
 import Button from 'components/Button/Button';
 import { ReactComponent as SearchIcon } from '../icons/searchIcon.svg';
 import { SearchbarHeader, SearchForm, Input } from './Searchbar.styled';
 
-export default class Searchbar extends Component {
-  state = {
-    word: '',
+export default function Searchbar({ onSubmit }) {
+  const [word, setWord] = useState('');
+
+  const handleChangeWord = e => {
+    setWord(e.target.value);
   };
 
-  handleChangeWord = e => {
-    this.setState({ word: e.target.value });
-  };
-
-  handleSubmit = e => {
+  const handleSubmit = e => {
     e.preventDefault();
-
-    if (this.state.word.trim() === '') {
+    if (word.trim() === '') {
       alert('Please, enter a search word!');
       return;
     }
-
-    this.props.onSubmit(this.state.word);
-    this.setState({ word: '' });
+    onSubmit(word);
+    setWord('');
   };
 
-  render() {
-    return (
-      <SearchbarHeader>
-        <SearchForm onSubmit={this.handleSubmit}>
-          <Button>
-            <SearchIcon width="20" height="20" />
-          </Button>
-          <Input
-            type="text"
-            autoComplete="off"
-            autoFocus
-            placeholder="Search images and photos"
-            name="word"
-            value={this.state.word}
-            onChange={this.handleChangeWord}
-          />
-        </SearchForm>
-      </SearchbarHeader>
-    );
-  }
+  return (
+    <SearchbarHeader>
+      <SearchForm onSubmit={handleSubmit}>
+        <Button>
+          <SearchIcon width="20" height="20" />
+        </Button>
+        <Input
+          type="text"
+          autoComplete="off"
+          autoFocus
+          placeholder="Search images and photos"
+          name="word"
+          value={word}
+          onChange={handleChangeWord}
+        />
+      </SearchForm>
+    </SearchbarHeader>
+  );
 }
 
 Searchbar.propTypes = {

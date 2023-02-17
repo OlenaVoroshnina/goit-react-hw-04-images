@@ -1,4 +1,4 @@
-import React, { Component } from 'react';
+import { useState, useEffect } from 'react';
 import PropTypes from 'prop-types';
 import Searchbar from './Searchbar/Searchbar';
 import { Container } from './App.styled';
@@ -7,67 +7,57 @@ import LoadMore from './LoadMore/LoadMore';
 import { fetchPhotosByQuery } from 'services/Api';
 import { Loader } from './Loader/Loader';
 
-export class App extends Component {
-  state = {
-    query: '',
-    images: [],
-    page: 1,
-    error: null,
-    isLoading: false,
-    showLoadMore: false,
-  };
+export function App() {
+  const [query, setQuery] = useState('');
+  const [images, setImages] = useState([]);
+  const [isLoading, setIsLoading] = useState(false);
+  const [error, setError] = useState(null);
+  const [page, setPage] = useState(1);
+  const [showLoadMore, setShowLoadMore] = useState(false);
 
-  async componentDidUpdate(_, prevState) {
-    const { query, page } = this.state;
-    if (prevState.query !== query || prevState.page !== page) {
-      this.setState({ isLoading: true, });
+  useEffect(() => {
+    if (!query) return;
+
+    const getImage = async () => {
+      setIsLoading(true);
       try {
         const { hits, totalHits } = await fetchPhotosByQuery(query, page);
-        this.setState(prevState => ({
-          images: [...prevState.images, ...hits],
-          showLoadMore: page < Math.ceil(totalHits / 12),
-        }));
+        setImages(prevState => [...prevState, ...hits]);
+        setShowLoadMore(page < Math.ceil(totalHits / 12));
         if (hits.length === 0) {
           return alert('Nothing found for your request. Please, try again');
         }
       } catch (error) {
-        this.setState({error: error.message,})
+        setError(error.message);
       } finally {
-        this.setState({ isLoading: false });
+        setIsLoading(false);
       }
-    }
-  }
+    };
+    getImage();
+  }, [query, page]);
 
-  handleSearchbarSubmit = query => {
-    this.setState({ 
-      query, 
-      page: 1, 
-      images: [],
-      error: null,
-      isLoading: false,
-      showLoadMore: false,
-     });
+  const handleSearchbarSubmit = query => {
+    setQuery(query);
+    setPage(1);
+    setImages([]);
+    setError(null);
+    setIsLoading(false);
+    setShowLoadMore(false);
   };
 
-  loadMore = () => {
-    this.setState(prevState => ({
-      page: prevState.page + 1,
-    }));
+  const loadMore = () => {
+    setPage(prevState => prevState + 1);
   };
 
-  render() {
-    const { isLoading, images, error, showLoadMore } = this.state;
-
-    return (
-      <Container>
-        <Searchbar onSubmit={this.handleSearchbarSubmit} />
-        {isLoading && <Loader />}
-        {images && <ImageGallery images={images} />}
-        {showLoadMore && <LoadMore onClick={this.loadMore}>Load more</LoadMore>}
-        {error && <h1>{this.state.error}</h1>}
-      </Container>
-    );
-  }
+  return (
+    <Container>
+      <Searchbar onSubmit={handleSearchbarSubmit} />
+      {isLoading && <Loader />}
+      {images && <ImageGallery images={images} />}
+      {showLoadMore && <LoadMore onClick={loadMore}>Load more</LoadMore>}
+      {error && <h1>{error}</h1>}
+    </Container>
+  );
 }
 
 App.propTypes = {
@@ -77,8 +67,10 @@ App.propTypes = {
   error: PropTypes.string,
   isLoading: PropTypes.bool,
   showLoadMore: PropTypes.bool,
-  images: PropTypes.arrayOf(PropTypes.shape({
-    hits: PropTypes.array.isRequired,
-    totalHits: PropTypes.number.isRequired,
-}))
+  images: PropTypes.arrayOf(
+    PropTypes.shape({
+      hits: PropTypes.array.isRequired,
+      totalHits: PropTypes.number.isRequired,
+    })
+  ),
 };
